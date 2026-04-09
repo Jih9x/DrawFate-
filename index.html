@@ -3,602 +3,663 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="theme-color" content="#0a0a14">
-  <title>DrawFate — จับใบดำใบแดง</title>
+  <meta name="theme-color" content="#000000">
+  <title>DrawFate</title>
   <meta name="description" content="จำลองการจับใบดำใบแดง ตั้งจำนวน ดูโอกาส สุ่มผลได้เลย">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a14;
-      --card: #12121e;
-      --card-b: rgba(255,255,255,0.07);
-      --inner: #1a1a2e;
-      --gold: #f0c040;
-      --gold2: #ff8c00;
-      --red: #e84040;
-      --text: #e8e8f0;
-      --muted: #5a5a90;
-      --radius: 18px;
+      --text-1: #f5f5f7;
+      --text-2: rgba(235,235,245,0.6);
+      --text-3: rgba(235,235,245,0.3);
+      --sep: rgba(84,84,88,0.45);
+      --fill: rgba(120,120,128,0.18);
+      --fill2: rgba(120,120,128,0.26);
+      --red: #ff453a;
+      --green: #30d158;
+      --amber: #ff9f0a;
+      --r: 20px;
     }
 
     body {
-      font-family: 'Sarabun', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 0 16px 80px;
+      font-family: -apple-system, 'Sarabun', BlinkMacSystemFont, system-ui, sans-serif;
+      background: #000;
+      color: var(--text-1);
+      min-height: 100dvh;
+      padding: 0 18px 96px;
+      overflow-x: hidden;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .container { max-width: 460px; margin: 0 auto; }
-
-    /* ── Header ── */
-    header { padding: 28px 0 18px; text-align: center; }
-
-    .app-title {
-      font-size: 2rem; font-weight: 900; letter-spacing: -0.5px;
-      background: linear-gradient(135deg, var(--gold), var(--gold2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
+    /* ambient glow */
+    .glow-r, .glow-b {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; z-index: 0;
     }
-    .app-sub { font-size: 0.88rem; color: var(--muted); margin-top: 5px; }
+    .glow-r {
+      width: 560px; height: 560px;
+      background: radial-gradient(circle, rgba(255,59,48,.07) 0%, transparent 65%);
+      top: -220px; left: -160px;
+    }
+    .glow-b {
+      width: 480px; height: 480px;
+      background: radial-gradient(circle, rgba(10,132,255,.05) 0%, transparent 65%);
+      bottom: -180px; right: -140px;
+    }
 
-    /* ── UI Card ── */
-    .ui-card {
-      background: var(--card);
-      border: 1px solid var(--card-b);
-      border-radius: var(--radius);
-      padding: 20px;
+    .container {
+      max-width: 420px; margin: 0 auto;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Header ─────────────────────────── */
+    header { padding: 52px 0 28px; text-align: center; }
+
+    .app-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(145deg, #2a1d3d, #15102a);
+      border: 1px solid rgba(255,255,255,0.09);
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      font-size: 1.6rem; margin-bottom: 14px;
+    }
+
+    .app-name {
+      display: block; font-size: 1.55rem;
+      font-weight: 700; letter-spacing: -.4px;
+      color: var(--text-1);
+    }
+
+    .app-tagline { font-size: .86rem; color: var(--text-2); margin-top: 5px; }
+
+    /* ── Glass Card ─────────────────────── */
+    .sheet {
+      background: rgba(28,28,30,.65);
+      backdrop-filter: blur(48px) saturate(180%);
+      -webkit-backdrop-filter: blur(48px) saturate(180%);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: var(--r);
+      padding: 0;
       margin-bottom: 12px;
-    }
-    .card-label {
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 1.8px;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
+      overflow: hidden;
     }
 
-    /* ── Slip Controls ── */
-    .slips-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    .slip-box {
-      background: var(--inner); border-radius: 12px;
-      padding: 16px 10px; text-align: center;
+    .sheet-row {
+      display: grid; grid-template-columns: 1fr 1fr;
     }
-    .slip-dot {
-      display: inline-block; width: 9px; height: 9px;
-      border-radius: 50%; margin-right: 4px; vertical-align: middle;
-    }
-    .slip-dot.d { background: #666; }
-    .slip-dot.r { background: var(--red); }
-    .slip-type { font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; }
-    .slip-name { font-size: 1rem; font-weight: 800; margin-bottom: 1px; }
-    .slip-desc { font-size: 0.68rem; color: var(--muted); margin-bottom: 13px; }
 
-    .s-counter { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .sheet-row > * + * { border-left: 1px solid var(--sep); }
+
+    .cell { padding: 20px 16px; text-align: center; }
+
+    /* ── Slip Controls ──────────────────── */
+    .slip-head {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-k { background: #8e8e93; }
+    .dot-r { background: var(--red); }
+
+    .slip-label { font-size: .78rem; font-weight: 500; color: var(--text-2); }
+    .slip-sub   { display: block; font-size: .7rem; color: var(--text-3); margin-bottom: 14px; }
+
+    .stepper {
+      display: flex; align-items: center;
+      justify-content: center; gap: 12px;
+    }
 
     .s-btn {
-      width: 34px; height: 34px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: var(--card); color: var(--text);
-      font-size: 1.25rem; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.1s, transform 0.1s; flex-shrink: 0; line-height: 1;
+      width: 30px; height: 30px; border-radius: 50%;
+      border: none; background: var(--fill);
+      color: var(--text-1); font-size: 1.1rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .12s, transform .1s;
       -webkit-user-select: none; user-select: none;
     }
-    .s-btn:hover:not(:disabled) { background: #20203a; }
-    .s-btn:active:not(:disabled) { transform: scale(0.88); }
-    .s-btn:disabled { opacity: 0.22; cursor: default; }
+    .s-btn:hover:not(:disabled) { background: var(--fill2); }
+    .s-btn:active:not(:disabled) { transform: scale(.82); }
+    .s-btn:disabled { opacity: .18; cursor: default; }
 
-    .s-num {
-      font-size: 2.3rem; font-weight: 900; min-width: 46px; text-align: center; line-height: 1;
+    .s-val {
+      font-size: 2.4rem; font-weight: 700; letter-spacing: -1.5px;
+      min-width: 46px; text-align: center; line-height: 1;
     }
-    .s-num.dark-num { color: #bbb; }
-    .s-num.red-num  { color: var(--red); }
+    .s-val.v-k { color: #aeaeb2; }
+    .s-val.v-r { color: var(--red); }
 
-    /* ── Big Stats ── */
-    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* ── Stats ──────────────────────────── */
+    .stat-cell { padding: 20px 12px 16px; text-align: center; }
 
-    .stat-block {
-      background: var(--inner); border-radius: 12px;
-      padding: 18px 10px; text-align: center;
+    .stat-lbl {
+      font-size: .7rem; font-weight: 500;
+      letter-spacing: .3px; color: var(--text-3);
+      margin-bottom: 6px; min-height: 14px;
     }
-    .stat-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; }
-    .stat-big  {
-      font-size: 3.6rem; font-weight: 900; line-height: 1; letter-spacing: -2px;
-      transition: color 0.3s;
-    }
-    .stat-big.ppl  { color: var(--gold); }
-    .stat-big.pct  { color: var(--red); }
-    .stat-big.pct.hot { text-shadow: 0 0 24px rgba(232,64,64,0.4); }
-    .stat-unit { font-size: 0.95rem; font-weight: 600; opacity: 0.55; margin-top: 4px; }
 
-    .mode-tag {
-      display: inline-block; padding: 4px 12px; border-radius: 20px;
-      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px;
-      margin-top: 12px;
+    .stat-num {
+      font-size: 4.4rem; font-weight: 700;
+      letter-spacing: -3px; line-height: 1;
+      transition: color .3s;
     }
-    .mode-tag.setup { background: rgba(90,90,144,0.18); color: var(--muted); border: 1px solid rgba(90,90,144,0.3); }
-    .mode-tag.active { background: rgba(240,192,64,0.14); color: var(--gold); border: 1px solid rgba(240,192,64,0.28); }
+    .stat-num.n-k  { color: var(--text-1); }
+    .stat-num.n-r  { color: var(--red); }
+    .stat-num.n-r.hot {
+      text-shadow: 0 0 28px rgba(255,69,58,.4);
+    }
 
-    /* ── Draw Area ── */
-    .draw-area { text-align: center; }
+    .stat-unit {
+      font-size: .85rem; font-weight: 500;
+      color: var(--text-3); margin-top: 4px;
+    }
+
+    /* mode pill */
+    .pill-wrap { padding: 0 16px 16px; text-align: center; }
+
+    .mode-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: .68rem; font-weight: 600;
+      background: var(--fill); color: var(--text-2);
+    }
+    .pip {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #636366; flex-shrink: 0;
+    }
+    .mode-pill.is-live  { background: rgba(48,209,88,.1); color: var(--green); }
+    .mode-pill.is-live .pip { background: var(--green); }
+    .mode-pill.is-done  { background: rgba(255,159,10,.1); color: var(--amber); }
+    .mode-pill.is-done .pip { background: var(--amber); }
+
+    /* ── Draw section ───────────────────── */
+    .draw-wrap { padding: 24px 20px 20px; text-align: center; }
 
     /* Card flip */
-    .card-scene {
-      width: 140px; height: 196px; margin: 0 auto 20px;
-      perspective: 900px;
-      animation: cardFloat 3s ease-in-out infinite;
+    .scene {
+      width: 148px; height: 208px; margin: 0 auto 22px;
+      perspective: 1000px;
+      animation: float 4s ease-in-out infinite;
     }
-    .card-scene.busy, .card-scene.do-shake { animation: none; }
+    .scene.busy { animation: none; }
+    .scene.shake { animation: doShake .45s ease-out; }
 
-    @keyframes cardFloat {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-7px); }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
     }
     @keyframes doShake {
-      0%, 100% { transform: translateX(0); }
-      15%  { transform: translateX(-10px) rotate(-2deg); }
-      30%  { transform: translateX(10px)  rotate(2deg); }
-      45%  { transform: translateX(-7px); }
-      60%  { transform: translateX(7px); }
-      80%  { transform: translateX(-3px); }
+      0%,100% { transform: translateX(0); }
+      14%  { transform: translateX(-10px) rotate(-.8deg); }
+      28%  { transform: translateX(10px)  rotate(.8deg); }
+      42%  { transform: translateX(-7px); }
+      57%  { transform: translateX(7px); }
+      71%  { transform: translateX(-3px); }
+      85%  { transform: translateX(3px); }
     }
 
-    .flip-card {
+    .flip {
       width: 100%; height: 100%;
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+      position: relative; transform-style: preserve-3d;
+      transition: transform .68s cubic-bezier(.34,.3,.1,1);
     }
-    .flip-card.flipped { transform: rotateY(180deg); }
+    .flip.flipped { transform: rotateY(180deg); }
 
-    .card-face {
+    .face {
       position: absolute; width: 100%; height: 100%;
       backface-visibility: hidden; -webkit-backface-visibility: hidden;
-      border-radius: 14px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 18px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
     }
 
-    /* Back face */
+    /* back */
     .face-back {
-      background: linear-gradient(145deg, #191930, #0c0c20);
-      border: 2px solid rgba(255,255,255,0.09);
+      background: #0c0c10;
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 24px 56px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04);
       overflow: hidden;
     }
     .face-back::before {
       content: '';
       position: absolute; inset: 0;
-      background-image: repeating-linear-gradient(
-        45deg,
-        rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px,
-        transparent 0, transparent 50%
-      );
-      background-size: 10px 10px;
+      background-image:
+        repeating-linear-gradient(60deg,
+          rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px,
+          transparent 0, transparent 14px),
+        repeating-linear-gradient(-60deg,
+          rgba(255,255,255,.018) 0, rgba(255,255,255,.018) 1px,
+          transparent 0, transparent 14px);
     }
-    .back-icon  { font-size: 2.4rem; opacity: 0.4; position: relative; }
-    .back-label {
-      font-size: 0.7rem; letter-spacing: 3px; font-weight: 700;
-      color: rgba(255,255,255,0.2); margin-top: 6px; position: relative;
-    }
-
-    /* Front face */
-    .face-front { transform: rotateY(180deg); border: 2px solid transparent; }
-    .face-front.res-black {
-      background: linear-gradient(145deg, #1c1c30, #0a0a18);
-      border-color: rgba(255,255,255,0.13);
-    }
-    .face-front.res-red {
-      background: linear-gradient(145deg, #c0392b, #8b0000);
-      border-color: rgba(255,120,120,0.35);
+    .back-sym  { position: relative; font-size: 1.8rem; opacity: .18; margin-bottom: 7px; }
+    .back-word {
+      position: relative; font-size: .58rem; letter-spacing: 4px;
+      font-weight: 700; color: rgba(255,255,255,.15); text-transform: uppercase;
     }
 
-    .res-icon  { font-size: 3rem; margin-bottom: 6px; }
-    .res-label { font-size: 1.35rem; font-weight: 900; }
-    .res-label.black-lbl { color: #c8c8c8; }
-    .res-label.red-lbl   { color: #fff; text-shadow: 0 0 20px rgba(255,200,200,0.6); }
+    /* front */
+    .face-front {
+      transform: rotateY(180deg);
+      overflow: hidden;
+    }
+    .face-front.f-black {
+      background: linear-gradient(155deg, #1c1c1e 0%, #0a0a0c 100%);
+      border: 1px solid rgba(255,255,255,.07);
+      box-shadow: 0 24px 56px rgba(0,0,0,.7);
+    }
+    .face-front.f-red {
+      background: linear-gradient(155deg, #3a0c14 0%, #180508 100%);
+      border: 1px solid rgba(255,80,90,.12);
+      box-shadow: 0 24px 56px rgba(0,0,0,.7), 0 0 50px rgba(255,59,48,.08);
+    }
+    .face-front::after {
+      content: ''; position: absolute;
+      inset: 12px; border-radius: 10px; pointer-events: none;
+    }
+    .face-front.f-black::after { border: 1px solid rgba(255,255,255,.05); }
+    .face-front.f-red::after   { border: 1px solid rgba(255,100,100,.09); }
 
-    /* Draw button */
+    .res-sym  { font-size: 2.6rem; margin-bottom: 8px; }
+    .res-txt  { font-size: 1.3rem; font-weight: 700; letter-spacing: -.3px; }
+    .res-txt.t-k { color: rgba(235,235,245,.65); }
+    .res-txt.t-r { color: #f5f5f7; }
+
+    /* ── Draw button ────────────────────── */
     .btn-draw {
-      display: block; width: 100%; padding: 17px 20px;
+      display: block; width: 100%; padding: 16px;
       border-radius: 14px; border: none;
-      background: linear-gradient(135deg, var(--gold), var(--gold2));
-      color: #1a0800; font-family: 'Sarabun', sans-serif;
-      font-size: 1.15rem; font-weight: 800; cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 24px rgba(240,192,64,0.22);
+      background: #f5f5f7; color: #1c1c1e;
+      font-family: inherit; font-size: 1rem; font-weight: 700;
+      letter-spacing: -.2px; cursor: pointer;
+      transition: transform .14s, background .12s, box-shadow .14s;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
       -webkit-user-select: none; user-select: none;
     }
-    .btn-draw:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 32px rgba(240,192,64,0.32); }
-    .btn-draw:active:not(:disabled) { transform: translateY(0); }
-    .btn-draw:disabled { opacity: 0.3; cursor: default; transform: none; box-shadow: none; }
-
-    /* Running info */
-    .run-info {
-      display: flex; justify-content: space-between; align-items: center;
-      padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
-      margin-top: 16px; font-size: 0.8rem; color: var(--muted);
+    .btn-draw:hover:not(:disabled) {
+      background: #fff; transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0,0,0,.45);
     }
-    .run-val { font-weight: 700; color: var(--text); }
+    .btn-draw:active:not(:disabled) { transform: scale(.975); background: #e5e5ea; }
+    .btn-draw:disabled { opacity: .18; cursor: default; transform: none; box-shadow: none; }
 
-    /* History */
-    .history-wrap {
-      padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
-      margin-top: 14px;
+    /* ── Run info ───────────────────────── */
+    .run-info {
+      display: flex; justify-content: space-between;
+      padding-top: 14px; border-top: 1px solid var(--sep);
+      margin-top: 16px; font-size: .78rem;
+    }
+    .ri-label { color: var(--text-3); font-weight: 500; }
+    .ri-val   { font-weight: 700; color: var(--text-2); margin-left: 3px; }
+
+    /* ── History ────────────────────────── */
+    .hist-area {
+      padding-top: 14px; border-top: 1px solid var(--sep); margin-top: 14px;
     }
     .hist-title {
-      font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+      font-size: .68rem; font-weight: 600; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--text-3); margin-bottom: 9px;
     }
-    .hist-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .hist-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 
-    .h-dot {
-      width: 26px; height: 26px; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.62rem; font-weight: 800;
-      animation: dotPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    .chip {
+      height: 25px; min-width: 25px; padding: 0 7px;
+      border-radius: 7px; display: inline-flex;
+      align-items: center; justify-content: center;
+      font-size: .67rem; font-weight: 700;
+      animation: chipIn .22s cubic-bezier(.34,1.56,.64,1);
     }
-    @keyframes dotPop {
-      from { transform: scale(0) rotate(-15deg); opacity: 0; }
-      to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+    @keyframes chipIn {
+      from { transform: scale(.2) rotate(-12deg); opacity: 0; }
+      to   { transform: scale(1)  rotate(0);      opacity: 1; }
     }
-    .h-dot.hb { background: #22223a; color: #888; border: 1px solid #333; }
-    .h-dot.hr { background: #c0392b; color: #fff; }
+    .chip-k {
+      background: rgba(255,255,255,.07); color: var(--text-3);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .chip-r {
+      background: rgba(255,59,48,.13); color: #ff6961;
+      border: 1px solid rgba(255,59,48,.18);
+    }
 
-    /* Finished */
-    .finish-box {
-      text-align: center; padding: 20px;
-      background: rgba(240,192,64,0.07);
-      border: 1px solid rgba(240,192,64,0.15);
-      border-radius: 12px; margin-bottom: 16px;
+    /* ── Finished ───────────────────────── */
+    .fin-box {
+      padding: 22px 20px; border-radius: var(--r); margin-bottom: 12px;
+      background: rgba(48,209,88,.07);
+      border: 1px solid rgba(48,209,88,.14); text-align: center;
     }
-    .finish-ico   { font-size: 2.2rem; }
-    .finish-title { font-size: 1.1rem; font-weight: 800; color: var(--gold); margin-top: 7px; }
-    .finish-sub   { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    .fin-ico  { font-size: 1.8rem; }
+    .fin-ttl  { font-size: 1rem; font-weight: 700; color: var(--green); margin-top: 8px; }
+    .fin-sub  { font-size: .78rem; color: var(--text-3); margin-top: 5px; }
 
-    /* Reset */
+    /* ── Reset ──────────────────────────── */
     .btn-reset {
       display: block; width: 100%; padding: 14px;
-      border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);
-      background: transparent; color: var(--muted);
-      font-family: 'Sarabun', sans-serif; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; transition: all 0.15s;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(28,28,30,.5);
+      backdrop-filter: blur(20px);
+      color: var(--text-2); font-family: inherit;
+      font-size: .9rem; font-weight: 600; cursor: pointer;
+      transition: background .15s, color .15s;
     }
-    .btn-reset:hover { border-color: rgba(255,255,255,0.16); color: var(--text); background: rgba(255,255,255,0.03); }
-    .btn-reset:active { transform: scale(0.98); }
+    .btn-reset:hover { background: rgba(255,255,255,.06); color: var(--text-1); }
+    .btn-reset:active { transform: scale(.98); }
 
-    /* Confetti */
+    /* ── Confetti ───────────────────────── */
     #confetti {
       position: fixed; inset: 0;
       pointer-events: none; overflow: hidden; z-index: 9999;
     }
-    .c-p {
-      position: absolute;
-      animation: cFall linear both;
-    }
-    @keyframes cFall {
-      0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) rotate(600deg); opacity: 0; }
+    .c { position: absolute; animation: fall linear both; }
+    @keyframes fall {
+      0%   { transform: translateY(-10px) rotate(0); opacity: .9; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
 
-    /* Zero warning */
-    .zero-msg {
-      text-align: center; font-size: 0.85rem; color: var(--muted);
-      padding: 6px 0 0;
+    /* ── Zero warning ───────────────────── */
+    .zero-warn {
+      text-align: center; font-size: .78rem;
+      color: var(--amber); padding: 10px 0 0; font-weight: 500;
     }
 
-    /* Responsive */
     @media (max-width: 360px) {
-      .stat-big { font-size: 2.9rem; }
-      .app-title { font-size: 1.7rem; }
-      .s-num { font-size: 2rem; }
+      .stat-num { font-size: 3.6rem; }
+      .s-val    { font-size: 2.1rem; }
     }
   </style>
 </head>
 <body>
+  <div class="glow-r"></div>
+  <div class="glow-b"></div>
   <div id="confetti"></div>
 
   <div class="container">
+
     <header>
-      <div class="app-title">🎴 DrawFate</div>
-      <div class="app-sub">จำลองการจับใบดำใบแดง</div>
+      <div class="app-icon">🎴</div>
+      <span class="app-name">DrawFate</span>
+      <div class="app-tagline">จำลองการจับใบดำใบแดง</div>
     </header>
 
     <!-- Setup -->
-    <div class="ui-card">
-      <div class="card-label">ตั้งค่าใบ</div>
-      <div class="slips-row">
-        <div class="slip-box">
-          <div class="slip-type"><span class="slip-dot d"></span>ใบดำ</div>
-          <div class="slip-name" style="color:#aaa">โดน!</div>
-          <div class="slip-desc">ถูกเลือก</div>
-          <div class="s-counter">
+    <div class="sheet">
+      <div style="padding:16px 16px 6px">
+        <span style="font-size:.7rem;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--text-3)">ตั้งค่าใบ</span>
+      </div>
+      <div class="sheet-row">
+        <div class="cell">
+          <div class="slip-head">
+            <span class="dot dot-k"></span>
+            <span class="slip-label">ใบดำ</span>
+          </div>
+          <span class="slip-sub">โดน!</span>
+          <div class="stepper">
             <button class="s-btn" id="bm" onclick="adj('b',-1)">−</button>
-            <div class="s-num dark-num" id="bc">1</div>
+            <div class="s-val v-k" id="bc">1</div>
             <button class="s-btn" id="bp" onclick="adj('b',1)">+</button>
           </div>
         </div>
-        <div class="slip-box">
-          <div class="slip-type"><span class="slip-dot r"></span>ใบแดง</div>
-          <div class="slip-name" style="color:#e84040">ปลอดภัย!</div>
-          <div class="slip-desc">รอดแล้ว</div>
-          <div class="s-counter">
+        <div class="cell">
+          <div class="slip-head">
+            <span class="dot dot-r"></span>
+            <span class="slip-label">ใบแดง</span>
+          </div>
+          <span class="slip-sub">ปลอดภัย!</span>
+          <div class="stepper">
             <button class="s-btn" id="rm" onclick="adj('r',-1)">−</button>
-            <div class="s-num red-num" id="rc">5</div>
+            <div class="s-val v-r" id="rc">5</div>
             <button class="s-btn" id="rp" onclick="adj('r',1)">+</button>
           </div>
         </div>
       </div>
-      <div id="zeroMsg" class="zero-msg" style="display:none">⚠️ ต้องมีใบอย่างน้อย 1 ใบ</div>
+      <div id="zeroWarn" class="zero-warn" style="display:none;padding-bottom:12px">⚠ ต้องมีใบอย่างน้อย 1 ใบ</div>
     </div>
 
-    <!-- Big Stats -->
-    <div class="ui-card">
-      <div class="stats-row">
-        <div class="stat-block">
-          <div class="stat-lbl" id="pplLbl">ต้องการผู้เล่น</div>
-          <div class="stat-big ppl" id="statPpl">6</div>
+    <!-- Stats -->
+    <div class="sheet">
+      <div class="sheet-row">
+        <div class="stat-cell">
+          <div class="stat-lbl" id="pplLbl">ผู้เล่นทั้งหมด</div>
+          <div class="stat-num n-k" id="statPpl">6</div>
           <div class="stat-unit">คน</div>
         </div>
-        <div class="stat-block">
+        <div class="stat-cell">
           <div class="stat-lbl" id="pctLbl">โอกาสใบดำ</div>
-          <div class="stat-big pct" id="statPct">16.7</div>
+          <div class="stat-num n-r" id="statPct">16.7</div>
           <div class="stat-unit">%</div>
         </div>
       </div>
-      <div style="text-align:center">
-        <div class="mode-tag setup" id="modeTag">ตั้งค่า</div>
+      <div class="pill-wrap">
+        <div class="mode-pill" id="modePill">
+          <span class="pip"></span>
+          <span id="modeText">ตั้งค่า</span>
+        </div>
       </div>
     </div>
 
     <!-- Draw -->
-    <div class="ui-card draw-area">
-      <div class="card-scene" id="scene">
-        <div class="flip-card" id="flipCard">
-          <div class="card-face face-back">
-            <div class="back-icon">🎴</div>
-            <div class="back-label">DRAW</div>
+    <div class="sheet">
+      <div class="draw-wrap">
+        <!-- Card scene -->
+        <div class="scene" id="scene">
+          <div class="flip" id="flip">
+            <div class="face face-back">
+              <div class="back-sym">◆</div>
+              <div class="back-word">DrawFate</div>
+            </div>
+            <div class="face face-front" id="ffront"></div>
           </div>
-          <div class="card-face face-front" id="cardFront"></div>
         </div>
-      </div>
 
-      <button class="btn-draw" id="drawBtn" onclick="draw()">🎴 จับใบ</button>
+        <!-- Draw button -->
+        <button class="btn-draw" id="drawBtn" onclick="draw()">จับใบ</button>
 
-      <div class="run-info" id="runInfo" style="display:none">
-        <span>ใบที่เหลือ: <span class="run-val" id="remCount">—</span></span>
-        <span>โอกาสครั้งนี้: <span class="run-val" id="remPct">—</span></span>
-      </div>
+        <!-- Run info -->
+        <div class="run-info" id="runInfo" style="display:none">
+          <span><span class="ri-label">ใบที่เหลือ</span><span class="ri-val" id="remC">—</span></span>
+          <span><span class="ri-label">โอกาสครั้งนี้</span><span class="ri-val" id="remP">—</span></span>
+        </div>
 
-      <div class="history-wrap" id="histWrap" style="display:none">
-        <div class="hist-title">ผลที่ผ่านมา</div>
-        <div class="hist-list" id="histList"></div>
+        <!-- History -->
+        <div class="hist-area" id="histArea" style="display:none">
+          <div class="hist-title">ผลที่ผ่านมา</div>
+          <div class="hist-chips" id="chips"></div>
+        </div>
       </div>
     </div>
 
     <!-- Finished -->
-    <div class="finish-box" id="finishBox" style="display:none">
-      <div class="finish-ico">🎊</div>
-      <div class="finish-title">จับครบทุกคนแล้ว!</div>
-      <div class="finish-sub" id="finishSummary"></div>
+    <div class="fin-box" id="finBox" style="display:none">
+      <div class="fin-ico">✦</div>
+      <div class="fin-ttl">จบรอบแล้ว</div>
+      <div class="fin-sub" id="finSub"></div>
     </div>
 
-    <button class="btn-reset" onclick="reset()">↺ รีเซ็ตเริ่มใหม่</button>
+    <button class="btn-reset" onclick="reset()">↺  รีเซ็ตเริ่มใหม่</button>
   </div>
 
   <script>
-    // ── State ────────────────────────────────────────────────────────────
-    let bT = 1, rT = 5;   // totals
-    let bR = 1, rR = 5;   // remaining
-    let busy = false, started = false;
-    let history = [];
+    let bT=1, rT=5, bR=1, rR=5;
+    let busy=false, started=false, hist=[];
 
-    // ── Update Stats Display ─────────────────────────────────────────────
-    function updateStats() {
-      const total  = started ? bR + rR : bT + rT;
-      const black  = started ? bR      : bT;
-      const pct    = total > 0 ? black / total * 100 : 0;
-      const pctStr = pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1);
+    const fmt = n => n%1===0 ? n.toFixed(0) : n.toFixed(1);
 
-      document.getElementById('statPpl').textContent = total;
-      document.getElementById('statPct').textContent = pctStr;
+    function updateUI() {
+      const tot  = started ? bR+rR : bT+rT;
+      const blk  = started ? bR : bT;
+      const pct  = tot > 0 ? blk/tot*100 : 0;
 
-      const pctEl = document.getElementById('statPct');
-      pct >= 50 ? pctEl.classList.add('hot') : pctEl.classList.remove('hot');
+      document.getElementById('statPpl').textContent = tot;
+      document.getElementById('statPct').textContent = fmt(pct);
+      pct>=50
+        ? document.getElementById('statPct').classList.add('hot')
+        : document.getElementById('statPct').classList.remove('hot');
 
-      if (started) {
-        document.getElementById('pplLbl').textContent = 'ใบที่เหลือ';
-        document.getElementById('pctLbl').textContent = 'โอกาสครั้งนี้';
-      } else {
-        document.getElementById('pplLbl').textContent = 'ต้องการผู้เล่น';
-        document.getElementById('pctLbl').textContent = 'โอกาสใบดำ';
-      }
+      document.getElementById('pplLbl').textContent = started ? 'ใบที่เหลือ'     : 'ผู้เล่นทั้งหมด';
+      document.getElementById('pctLbl').textContent = started ? 'โอกาสครั้งนี้' : 'โอกาสใบดำ';
 
-      // Zero warning
-      const noSlips = (bT + rT) === 0;
-      document.getElementById('zeroMsg').style.display = noSlips ? 'block' : 'none';
-      document.getElementById('drawBtn').disabled = noSlips || busy;
+      const none = (bT+rT) === 0;
+      document.getElementById('zeroWarn').style.display = none ? 'block' : 'none';
+      document.getElementById('drawBtn').disabled = none || busy;
 
-      // Minus buttons
-      document.getElementById('bm').disabled = started || bT <= 0;
+      document.getElementById('bm').disabled = started || bT<=0;
       document.getElementById('bp').disabled = started;
-      document.getElementById('rm').disabled = started || rT <= 0;
+      document.getElementById('rm').disabled = started || rT<=0;
       document.getElementById('rp').disabled = started;
     }
 
-    // ── Adjust Slip Count ────────────────────────────────────────────────
-    function adj(type, d) {
+    function adj(t, d) {
       if (started) return;
-      if (type === 'b') {
-        bT = Math.max(0, Math.min(99, bT + d));
-        document.getElementById('bc').textContent = bT;
-      } else {
-        rT = Math.max(0, Math.min(99, rT + d));
-        document.getElementById('rc').textContent = rT;
-      }
-      bR = bT; rR = rT;
-      updateStats();
+      if (t==='b') { bT=Math.max(0,Math.min(99,bT+d)); bR=bT; document.getElementById('bc').textContent=bT; }
+      else          { rT=Math.max(0,Math.min(99,rT+d)); rR=rT; document.getElementById('rc').textContent=rT; }
+      updateUI();
     }
 
-    // ── Draw Logic ───────────────────────────────────────────────────────
     function draw() {
-      if (busy || bR + rR === 0) return;
+      if (busy || bR+rR===0) return;
       busy = true;
       document.getElementById('drawBtn').disabled = true;
 
-      const scene    = document.getElementById('scene');
-      const flipCard = document.getElementById('flipCard');
-      const front    = document.getElementById('cardFront');
+      const scene = document.getElementById('scene');
+      const flip  = document.getElementById('flip');
+      const front = document.getElementById('ffront');
 
+      // stop float, clear shake
       scene.classList.add('busy');
-      scene.classList.remove('do-shake');
+      scene.classList.remove('shake');
 
-      // 1. Reset flip if needed
-      const wasFlipped = flipCard.classList.contains('flipped');
+      const wasFlipped = flip.classList.contains('flipped');
       if (wasFlipped) {
-        flipCard.style.transition = 'transform 0.28s ease-in';
-        flipCard.classList.remove('flipped');
+        flip.style.transition = 'transform .28s ease-in';
+        flip.classList.remove('flipped');
       }
 
       setTimeout(() => {
-        flipCard.style.transition = '';
+        flip.style.transition = '';
 
-        // 2. Start game on first draw
+        // first draw — start game
         if (!started) {
-          started = true;
-          bR = bT; rR = rT;
-          document.getElementById('modeTag').className = 'mode-tag active';
-          document.getElementById('modeTag').textContent = 'กำลังจับ';
-          document.getElementById('runInfo').style.display = 'flex';
-          document.getElementById('histWrap').style.display = 'block';
-          updateStats();
+          started = true; bR = bT; rR = rT;
+          const p = document.getElementById('modePill');
+          p.className = 'mode-pill is-live';
+          document.getElementById('modeText').textContent = 'กำลังจับ';
+          document.getElementById('runInfo').style.display  = 'flex';
+          document.getElementById('histArea').style.display = 'block';
+          updateUI();
         }
 
-        // 3. Determine result
-        const total   = bR + rR;
-        const isBlack = Math.random() * total < bR;
+        // pick result
+        const isBlack = Math.random() * (bR+rR) < bR;
         if (isBlack) bR--; else rR--;
 
-        // 4. Set front face
-        front.className = 'card-face face-front ' + (isBlack ? 'res-black' : 'res-red');
+        // set front face
+        front.className = 'face face-front ' + (isBlack ? 'f-black' : 'f-red');
         front.innerHTML = isBlack
-          ? '<div class="res-icon">🖤</div><div class="res-label black-lbl">โดน!</div>'
-          : '<div class="res-icon">❤️</div><div class="res-label red-lbl">ปลอดภัย!</div>';
+          ? '<div class="res-sym" style="opacity:.5;font-size:2.2rem">●</div><div class="res-txt t-k">โดน!</div>'
+          : '<div class="res-sym" style="font-size:2.4rem">◆</div><div class="res-txt t-r">ปลอดภัย!</div>';
 
-        // 5. Flip
-        requestAnimationFrame(() => {
-          flipCard.classList.add('flipped');
-        });
+        requestAnimationFrame(() => flip.classList.add('flipped'));
 
-        // 6. Post-flip effects
+        // post-flip effects
         setTimeout(() => {
           scene.classList.remove('busy');
+
           if (isBlack) {
-            scene.classList.add('do-shake');
+            // slight delay then shake
+            setTimeout(() => scene.classList.add('shake'), 30);
           } else {
             launchConfetti();
           }
 
-          // Update history & info
-          history.push(isBlack ? 'b' : 'r');
-          renderHistory();
-          updateStats();
+          // update history
+          hist.push(isBlack ? 'k' : 'r');
+          const chip = document.createElement('div');
+          chip.className = 'chip ' + (isBlack ? 'chip-k' : 'chip-r');
+          chip.textContent = hist.length;
+          document.getElementById('chips').appendChild(chip);
 
-          // Update run info text
-          const rem  = bR + rR;
-          const rPct = rem > 0 ? (bR / rem * 100) : 0;
-          document.getElementById('remCount').textContent = rem + ' ใบ';
-          document.getElementById('remPct').textContent   =
-            (rPct % 1 === 0 ? rPct.toFixed(0) : rPct.toFixed(1)) + '%';
+          updateUI();
 
-          // Check finished
+          const rem = bR+rR;
+          const rp  = rem > 0 ? (bR/rem*100) : 0;
+          document.getElementById('remC').textContent = ' ' + rem + ' ใบ';
+          document.getElementById('remP').textContent = ' ' + fmt(rp) + '%';
+
           if (rem === 0) {
-            setTimeout(showFinished, 800);
+            setTimeout(finish, 900);
           } else {
             busy = false;
             document.getElementById('drawBtn').disabled = false;
           }
-        }, 700);
+        }, 730);
 
       }, wasFlipped ? 320 : 60);
     }
 
-    function renderHistory() {
-      const list = document.getElementById('histList');
-      const item = document.createElement('div');
-      const last = history[history.length - 1];
-      item.className = 'h-dot ' + (last === 'b' ? 'hb' : 'hr');
-      item.title     = last === 'b' ? 'โดน!' : 'ปลอดภัย';
-      item.textContent = history.length;
-      list.appendChild(item);
-    }
-
-    function showFinished() {
-      document.getElementById('modeTag').textContent = 'จบรอบ';
-      const bCount = history.filter(x => x === 'b').length;
-      const rCount = history.filter(x => x === 'r').length;
-      document.getElementById('finishSummary').textContent =
-        `ใบดำ ${bCount} คน · ใบแดง ${rCount} คน`;
-      document.getElementById('finishBox').style.display = 'block';
-      document.getElementById('drawBtn').style.display   = 'none';
+    function finish() {
+      const bC = hist.filter(x=>x==='k').length;
+      const rC = hist.filter(x=>x==='r').length;
+      document.getElementById('finSub').textContent = 'ใบดำ ' + bC + ' คน · ใบแดง ' + rC + ' คน';
+      document.getElementById('finBox').style.display = 'block';
+      document.getElementById('drawBtn').style.display = 'none';
+      const p = document.getElementById('modePill');
+      p.className = 'mode-pill is-done';
+      document.getElementById('modeText').textContent = 'จบรอบ';
       busy = false;
     }
 
-    // ── Reset ────────────────────────────────────────────────────────────
     function reset() {
-      started = false; busy = false; history = [];
+      started = false; busy = false; hist = [];
       bR = bT; rR = rT;
 
-      // Card
-      const flipCard = document.getElementById('flipCard');
-      const scene    = document.getElementById('scene');
-      flipCard.style.transition = 'transform 0.28s ease-in';
-      flipCard.classList.remove('flipped');
-      setTimeout(() => { flipCard.style.transition = ''; }, 300);
-      scene.classList.remove('do-shake', 'busy');
+      const flip = document.getElementById('flip');
+      flip.style.transition = 'transform .28s ease-in';
+      flip.classList.remove('flipped');
+      setTimeout(() => flip.style.transition = '', 300);
 
-      // UI
-      document.getElementById('modeTag').className  = 'mode-tag setup';
-      document.getElementById('modeTag').textContent = 'ตั้งค่า';
-      document.getElementById('runInfo').style.display   = 'none';
-      document.getElementById('histWrap').style.display  = 'none';
-      document.getElementById('histList').innerHTML = '';
-      document.getElementById('finishBox').style.display = 'none';
-      document.getElementById('drawBtn').style.display   = '';
+      const scene = document.getElementById('scene');
+      scene.classList.remove('busy','shake');
 
-      updateStats();
+      document.getElementById('modePill').className = 'mode-pill';
+      document.getElementById('modeText').textContent = 'ตั้งค่า';
+      document.getElementById('runInfo').style.display  = 'none';
+      document.getElementById('histArea').style.display = 'none';
+      document.getElementById('chips').innerHTML = '';
+      document.getElementById('finBox').style.display   = 'none';
+      document.getElementById('drawBtn').style.display  = '';
+
+      updateUI();
     }
 
-    // ── Confetti ─────────────────────────────────────────────────────────
-    const C_COLORS = ['#ff6b6b','#ffd700','#4ecdc4','#45b7d1','#a29bfe','#fd79a8','#55efc4'];
+    const CONF = ['#ff6b6b','#ffd60a','#30d158','#64d2ff','#bf5af2','#ff9f0a','#ff9eb5'];
 
     function launchConfetti() {
       const box = document.getElementById('confetti');
-      for (let i = 0; i < 60; i++) {
-        const delay = i * 18;
+      for (let i=0; i<55; i++) {
         setTimeout(() => {
           const p = document.createElement('div');
-          p.className = 'c-p';
-          const size = 6 + Math.random() * 8;
+          p.className = 'c';
+          const s = 5 + Math.random()*8;
           p.style.cssText = [
             `left:${Math.random()*100}%`,
-            `top:0`,
-            `width:${size}px`,
-            `height:${size}px`,
-            `background:${C_COLORS[i % C_COLORS.length]}`,
-            `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
-            `animation-duration:${1.2 + Math.random() * 1.4}s`,
-            `animation-delay:0s`,
+            `width:${s}px`, `height:${s}px`,
+            `background:${CONF[i%CONF.length]}`,
+            `border-radius:${Math.random()>.5?'50%':'3px'}`,
+            `animation-duration:${1.1+Math.random()*1.5}s`,
           ].join(';');
           box.appendChild(p);
-          setTimeout(() => p.remove(), 3000);
-        }, delay);
+          setTimeout(() => p.remove(), 3200);
+        }, i * 17);
       }
     }
 
-    // ── Init ─────────────────────────────────────────────────────────────
-    updateStats();
+    updateUI();
   </script>
 </body>
 </html>
